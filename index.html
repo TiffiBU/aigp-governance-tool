@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIGP × AI Governance Laws Comparison Tool</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --panel:#ffffff; --border:#e2e5ea; --border-strong:#c9ced8;
+    --text:#1a1d24; --text-dim:#5b6270; --text-faint:#8a90a0;
+    --accent:#3355ee; --accent-dim:#eef1ff;
+    --m-bg:#fde8e8; --m-fg:#b3261e; --m-dot:#d93025;
+    --p-bg:#fff3d6; --p-fg:#8a5a00; --p-dot:#e8a300;
+    --g-bg:#e3f6e9; --g-fg:#1e7a3d; --g-dot:#2fa860;
+    --n-bg:#eef0f3; --n-fg:#7a8090; --n-dot:#b0b5c0;
+    --radius:10px;
+    --shadow:0 4px 16px rgba(20,24,40,.08), 0 1px 3px rgba(20,24,40,.06);
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  body{min-height:100vh;}
+  .app{max-width:1400px;margin:0 auto;padding:20px 20px 60px;}
+
+  /* ---------- Header ---------- */
+  header.top{margin-bottom:18px;}
+  header.top h1{font-size:1.5rem;margin:0 0 4px;letter-spacing:-.01em;}
+  header.top p.sub{margin:0;color:var(--text-dim);font-size:.92rem;}
+
+  .reg-banner{margin-top:14px;background:#fff7e6;border:1px solid #f0d78c;border-radius:8px;
+    padding:10px 14px;font-size:.82rem;line-height:1.5;color:#6b5400;display:flex;gap:10px;align-items:flex-start;}
+  .reg-banner b{color:#4a3900;}
+  .reg-banner .close-banner{margin-left:auto;background:none;border:none;color:#8a6d00;cursor:pointer;font-size:.9rem;flex-shrink:0;}
+
+  .mode-toggle{display:flex;gap:0;margin:18px 0 14px;background:var(--panel);
+    border:1px solid var(--border);border-radius:999px;padding:4px;width:fit-content;
+    box-shadow:var(--shadow);}
+  .mode-toggle button{border:none;background:transparent;padding:9px 20px;border-radius:999px;
+    font-size:.92rem;font-weight:600;cursor:pointer;color:var(--text-dim);transition:.15s;}
+  .mode-toggle button.active{background:var(--accent);color:#fff;}
+  .mode-toggle button:not(.active):hover{color:var(--text);}
+
+  .view{display:none;}
+  .view.active{display:block;}
+
+  /* ---------- Matrix Controls ---------- */
+  .controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:14px;}
+  .region-tabs{display:flex;gap:6px;flex-wrap:wrap;}
+  .region-tabs button{border:1px solid var(--border);background:var(--panel);color:var(--text-dim);
+    padding:7px 14px;border-radius:8px;font-size:.86rem;font-weight:600;cursor:pointer;}
+  .region-tabs button.active{background:var(--text);color:#fff;border-color:var(--text);}
+
+  .search-box{flex:1;min-width:180px;max-width:280px;}
+  .search-box input{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;
+    font-size:.88rem;background:var(--panel);color:var(--text);}
+  .search-box input:focus{outline:2px solid var(--accent);outline-offset:-1px;}
+
+  .domain-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
+  .domain-chips button{border:1px solid var(--border);background:var(--panel);color:var(--text-dim);
+    padding:5px 12px;border-radius:999px;font-size:.78rem;font-weight:600;cursor:pointer;}
+  .domain-chips button.active{background:var(--accent-dim);color:var(--accent);border-color:var(--accent);}
+  .domain-chips .clear{color:var(--text-faint);}
+
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;font-size:.8rem;color:var(--text-dim);}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .legend i{width:10px;height:10px;border-radius:3px;display:inline-block;}
+
+  .scope-note{font-size:.78rem;color:var(--text-faint);margin:-4px 0 14px;}
+  .scope-note a{color:var(--accent);text-decoration:none;font-weight:600;}
+  .scope-detail{margin-top:8px;background:var(--panel);border:1px solid var(--border);border-radius:8px;
+    padding:12px 14px;font-size:.8rem;line-height:1.6;color:var(--text-dim);}
+  .scope-detail b{color:var(--text);}
+  .scope-detail .map-row{margin:4px 0;}
+
+  /* ---------- Matrix Table ---------- */
+  .matrix-wrap{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:auto;max-height:72vh;position:relative;}
+  table.matrix{border-collapse:separate;border-spacing:0;width:100%;min-width:900px;}
+  table.matrix thead th{position:sticky;top:0;background:#fafbfc;z-index:3;border-bottom:1px solid var(--border-strong);
+    padding:10px 8px;font-size:.72rem;text-align:left;vertical-align:bottom;white-space:nowrap;}
+  table.matrix thead th.domain-head{left:0;z-index:5;background:#fafbfc;min-width:220px;}
+  .law-head-name{font-size:.78rem;font-weight:700;color:var(--text);display:flex;align-items:center;gap:4px;}
+  .law-head-sub{font-weight:400;color:var(--text-faint);font-size:.68rem;margin-top:2px;}
+  .region-band{position:sticky;top:0;z-index:4;}
+  .region-band td{padding:4px 8px;font-size:.68rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;
+    color:var(--text-faint);background:#f1f2f5;border-bottom:1px solid var(--border);}
+  .region-band td.domain-head{position:sticky;left:0;z-index:6;background:#f1f2f5;}
+
+  table.matrix tbody th{position:sticky;left:0;background:var(--panel);z-index:2;text-align:left;
+    padding:10px 12px;border-bottom:1px solid var(--border);border-right:1px solid var(--border-strong);
+    min-width:220px;max-width:260px;}
+  table.matrix tbody tr:hover th{background:#fafbfe;}
+  .domain-name{font-size:.86rem;font-weight:700;display:flex;align-items:center;gap:6px;}
+  .domain-desc{font-size:.72rem;color:var(--text-faint);margin-top:2px;line-height:1.3;}
+
+  table.matrix td.cell{border-bottom:1px solid var(--border);text-align:center;padding:0;cursor:pointer;
+    min-width:76px;}
+  .badge{display:inline-flex;align-items:center;justify-content:center;width:34px;height:26px;margin:8px auto;
+    border-radius:7px;font-weight:800;font-size:.78rem;transition:.1s;}
+  td.cell:hover .badge{transform:scale(1.12);}
+  .badge.M{background:var(--m-bg);color:var(--m-fg);}
+  .badge.P{background:var(--p-bg);color:var(--p-fg);}
+  .badge.G{background:var(--g-bg);color:var(--g-fg);}
+  .badge.N{background:var(--n-bg);color:var(--n-fg);}
+
+  .region-color-eu{box-shadow:inset 3px 0 0 #3355ee;}
+  .region-color-americas{box-shadow:inset 3px 0 0 #e8a300;}
+  .region-color-apac{box-shadow:inset 3px 0 0 #2fa860;}
+  .region-color-intl{box-shadow:inset 3px 0 0 #9b51e0;}
+
+  .no-results{padding:40px;text-align:center;color:var(--text-faint);}
+
+  /* ---------- Detail panel ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(20,24,40,.35);z-index:20;display:none;}
+  .overlay.show{display:block;}
+  .panel{position:fixed;top:0;right:0;height:100%;width:420px;max-width:92vw;background:var(--panel);
+    z-index:21;box-shadow:-8px 0 30px rgba(20,24,40,.2);transform:translateX(100%);transition:transform .22s ease;
+    display:flex;flex-direction:column;}
+  .panel.show{transform:translateX(0);}
+  .panel-head{padding:20px 22px 14px;border-bottom:1px solid var(--border);}
+  .panel-close{position:absolute;top:16px;right:18px;border:none;background:var(--n-bg);color:var(--text-dim);
+    width:30px;height:30px;border-radius:50%;font-size:1rem;cursor:pointer;}
+  .panel-law{font-size:1.15rem;font-weight:800;margin:0 0 2px;padding-right:30px;}
+  .panel-law-sub{color:var(--text-faint);font-size:.82rem;}
+  .panel-domain{margin-top:10px;font-size:.85rem;color:var(--text-dim);display:flex;align-items:center;gap:6px;}
+  .panel-status{display:inline-flex;align-items:center;gap:8px;margin-top:12px;padding:8px 12px;border-radius:8px;
+    font-weight:700;font-size:.85rem;}
+  .panel-verified{margin-top:8px;font-size:.72rem;color:var(--text-faint);}
+  .panel-body{padding:18px 22px;overflow-y:auto;flex:1;}
+  .panel-section{margin-bottom:20px;}
+  .panel-section h4{margin:0 0 6px;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;
+    color:var(--text-faint);font-weight:700;}
+  .panel-section p{margin:0;font-size:.92rem;line-height:1.55;color:var(--text);}
+  .panel-refs{display:inline-block;background:var(--accent-dim);color:var(--accent);padding:4px 10px;
+    border-radius:6px;font-size:.82rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+  .panel-tip{background:#fff9e8;border:1px solid #f3e3a8;border-radius:8px;padding:12px 14px;font-size:.85rem;
+    line-height:1.5;color:#6b5400;}
+
+  /* ---------- Law Finder ---------- */
+  .finder-grid{display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start;}
+  @media (max-width:900px){.finder-grid{grid-template-columns:1fr;}}
+  .finder-form{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:20px;box-shadow:var(--shadow);position:sticky;top:20px;}
+  .finder-form h3{margin:0 0 4px;font-size:1rem;}
+  .finder-form .hint{color:var(--text-faint);font-size:.8rem;margin:0 0 16px;}
+  .f-group{margin-bottom:18px;}
+  .f-group label.group-label{display:block;font-size:.78rem;font-weight:700;color:var(--text-dim);
+    margin-bottom:8px;text-transform:uppercase;letter-spacing:.03em;}
+  .f-options{display:flex;flex-wrap:wrap;gap:6px;}
+  .f-chip{border:1px solid var(--border);background:#fafbfc;color:var(--text-dim);padding:6px 11px;
+    border-radius:999px;font-size:.78rem;font-weight:600;cursor:pointer;user-select:none;}
+  .f-chip.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .finder-run{width:100%;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:8px;
+    font-weight:700;font-size:.92rem;cursor:pointer;margin-top:4px;}
+  .finder-run:hover{filter:brightness(1.06);}
+  .finder-reset{width:100%;padding:9px;background:transparent;color:var(--text-faint);border:none;
+    font-size:.8rem;cursor:pointer;margin-top:6px;}
+
+  .results-empty{background:var(--panel);border:1px dashed var(--border-strong);border-radius:var(--radius);
+    padding:50px 30px;text-align:center;color:var(--text-faint);}
+  .tier{margin-bottom:26px;}
+  .tier h3{display:flex;align-items:center;gap:8px;font-size:.95rem;margin:0 0 10px;}
+  .tier-count{font-weight:400;color:var(--text-faint);font-size:.82rem;}
+  .result-card{background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--border);
+    border-radius:8px;padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow);}
+  .result-card.definitely{border-left-color:var(--m-dot);}
+  .result-card.likely{border-left-color:var(--p-dot);}
+  .result-card.monitor{border-left-color:var(--g-dot);}
+  .result-card .rc-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+  .result-card .rc-name{font-weight:700;font-size:.96rem;}
+  .result-card .rc-sub{color:var(--text-faint);font-size:.76rem;margin-top:1px;}
+  .result-card .rc-why{font-size:.85rem;color:var(--text);margin:8px 0 6px;line-height:1.45;}
+  .result-card .rc-obl{font-size:.8rem;color:var(--text-dim);line-height:1.45;}
+  .result-card .rc-obl b{color:var(--text);}
+  .rc-jump{border:1px solid var(--border);background:#fafbfc;color:var(--accent);font-size:.76rem;
+    font-weight:700;padding:5px 10px;border-radius:6px;cursor:pointer;margin-top:10px;}
+
+  .disclaimer{margin-top:26px;font-size:.74rem;color:var(--text-faint);line-height:1.5;
+    border-top:1px solid var(--border);padding-top:14px;}
+
+  /* ---------- Cross-Compare ---------- */
+  .compare-picker{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+    padding:16px 18px;box-shadow:var(--shadow);margin-bottom:16px;}
+  .compare-picker-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;}
+  .compare-picker-top h3{margin:0;font-size:.95rem;}
+  .compare-quick{display:flex;gap:6px;flex-wrap:wrap;}
+  .compare-quick button{border:1px solid var(--border);background:#fafbfc;color:var(--accent);
+    font-size:.76rem;font-weight:700;padding:5px 10px;border-radius:6px;cursor:pointer;}
+  .compare-quick button.clear{color:var(--text-faint);}
+  .compare-region-group{margin-bottom:10px;}
+  .compare-region-group .grp-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;
+    color:var(--text-faint);margin-bottom:6px;}
+  .compare-chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .law-chip{border:1px solid var(--border);background:#fafbfc;color:var(--text-dim);padding:6px 12px;
+    border-radius:999px;font-size:.8rem;font-weight:600;cursor:pointer;}
+  .law-chip.region-color-eu{border-left:4px solid #3355ee;}
+  .law-chip.region-color-americas{border-left:4px solid #e8a300;}
+  .law-chip.region-color-apac{border-left:4px solid #2fa860;}
+  .law-chip.region-color-intl{border-left:4px solid #9b51e0;}
+  .law-chip.active{background:var(--text);color:#fff;border-color:var(--text);}
+  .compare-empty{padding:50px 30px;text-align:center;color:var(--text-faint);
+    background:var(--panel);border:1px dashed var(--border-strong);border-radius:var(--radius);}
+
+  /* ---------- Footers / guardrails ---------- */
+  .staleness-footer{margin-top:24px;padding:10px 14px;border-radius:8px;font-size:.78rem;line-height:1.5;
+    background:#e9f7ee;border:1px solid #b8e6c8;color:#1e6b3a;}
+  .staleness-footer.stale{background:#fff3d6;border-color:#f0d78c;color:#6b5400;}
+  .provenance-footer{margin-top:10px;font-size:.72rem;line-height:1.5;color:var(--text-faint);
+    border-top:1px solid var(--border);padding-top:12px;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="top">
+    <h1>AIGP × AI Governance Laws Comparison Tool</h1>
+    <p class="sub">Cross-jurisdictional reference for AIGP exam prep and AI governance practice — 12 practitioner comparison domains × 20 laws across 4 regions. (The official AIGP Body of Knowledge has 4 domains — see mapping below.)</p>
+    <div class="reg-banner" id="regBanner">
+      <span>⚠️</span>
+      <span><b>EU AI Act update (Digital Omnibus on AI, Reg. (EU) 2026/1744):</b> entered into force 27 Jul 2026. High-risk obligations for stand-alone Annex III systems are now deferred to <b>2 Dec 2027</b>; for AI embedded in regulated products (Annex I) to <b>2 Aug 2028</b>. Art. 50 transparency duties (chatbot disclosure, AI-content labelling) began enforcement on schedule, <b>2 Aug 2026</b>, with a transition to 2 Dec 2026 for systems already on the market. Prohibited practices (Art. 5) have applied since Feb 2025 and are unaffected. Cells below reflect these updated dates.</span>
+      <button class="close-banner" onclick="document.getElementById('regBanner').style.display='none'">✕</button>
+    </div>
+  </header>
+
+  <div class="mode-toggle">
+    <button id="modeMatrixBtn" class="active" onclick="setMode('matrix')">📊 Comparison Matrix</button>
+    <button id="modeCompareBtn" onclick="setMode('compare')">🔀 Cross-Compare</button>
+    <button id="modeFinderBtn" onclick="setMode('finder')">🔍 Law Finder</button>
+  </div>
+
+  <!-- ===================== MODE A: MATRIX ===================== -->
+  <div id="view-matrix" class="view active">
+
+    <div class="controls">
+      <div class="region-tabs" id="regionTabs"></div>
+      <div class="search-box"><input id="searchBox" type="text" placeholder="Search domains…" oninput="renderMatrix()"></div>
+    </div>
+
+    <div class="domain-chips" id="domainChips"></div>
+
+    <div class="legend">
+      <span><i style="background:var(--m-dot)"></i> M — Mandatory</span>
+      <span><i style="background:var(--p-dot)"></i> P — Partial</span>
+      <span><i style="background:var(--g-dot)"></i> G — Guidance</span>
+      <span><i style="background:var(--n-dot)"></i> N — Not addressed</span>
+      <span style="color:var(--text-faint)" title="Per AIGP exam-prep sources (not IAPP itself): EU AI Act, NIST AI RMF, and ISO/IEC 42001 are the three frameworks referenced repeatedly across all 4 AIGP Body of Knowledge domains.">★ = one of the 3 most-referenced frameworks (EU AI Act, NIST AI RMF, ISO/IEC 42001)</span>
+    </div>
+
+    <div class="scope-note">This tool's 12 rows are a practitioner comparison taxonomy, not the official AIGP exam structure. <a href="#" onclick="toggleScopeDetail(event)">See how they map to the real 4-domain Body of Knowledge →</a>
+      <div id="scopeDetail" class="scope-detail" style="display:none;"></div>
+    </div>
+
+    <div class="matrix-wrap"><div id="matrixContainer"></div></div>
+  </div>
+
+  <!-- ===================== MODE C: CROSS-COMPARE ===================== -->
+  <div id="view-compare" class="view">
+    <div class="compare-picker">
+      <div class="compare-picker-top">
+        <h3>Pick any laws, from any regions, to compare side by side</h3>
+        <div class="compare-quick">
+          <button onclick="compareQuickPick('primary')">★ Primary frameworks</button>
+          <button onclick="compareQuickPick('employment')">Employment-relevant set</button>
+          <button class="clear" onclick="compareQuickPick('clear')">Clear selection</button>
+        </div>
+      </div>
+      <div id="comparePickerBody"></div>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--m-dot)"></i> M — Mandatory</span>
+      <span><i style="background:var(--p-dot)"></i> P — Partial</span>
+      <span><i style="background:var(--g-dot)"></i> G — Guidance</span>
+      <span><i style="background:var(--n-dot)"></i> N — Not addressed</span>
+      <span style="color:var(--text-faint)">★ = one of the 3 most-referenced frameworks (EU AI Act, NIST AI RMF, ISO/IEC 42001)</span>
+    </div>
+    <div class="matrix-wrap"><div id="compareContainer"></div></div>
+  </div>
+
+  <!-- ===================== MODE B: LAW FINDER ===================== -->
+  <div id="view-finder" class="view">
+    <div class="finder-grid">
+      <div class="finder-form">
+        <h3>Describe the AI scenario</h3>
+        <p class="hint">Select every option that applies, then run the finder.</p>
+
+        <div class="f-group">
+          <label class="group-label">Where does the AI operate?</label>
+          <div class="f-options" id="opt-geo"></div>
+        </div>
+        <div class="f-group">
+          <label class="group-label">What does the AI do?</label>
+          <div class="f-options" id="opt-aitype"></div>
+        </div>
+        <div class="f-group">
+          <label class="group-label">What sector?</label>
+          <div class="f-options" id="opt-sector"></div>
+        </div>
+        <div class="f-group">
+          <label class="group-label">What data does it process?</label>
+          <div class="f-options" id="opt-data"></div>
+        </div>
+
+        <button class="finder-run" onclick="runFinder()">Find applicable laws</button>
+        <button class="finder-reset" onclick="resetFinder()">Clear all selections</button>
+      </div>
+
+      <div id="finderResults">
+        <div class="results-empty">Select at least one option on the left, then click <b>Find applicable laws</b>.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="staleness-footer" id="stalenessFooter"></div>
+  <div class="provenance-footer">This is an unofficial study aid, not IAPP-endorsed content and not legal advice. Legal summaries are synthesized from public legal texts and third-party AIGP exam-prep sources — always verify against primary sources (official statute/regulation text, the IAPP AIGP Body of Knowledge) before relying on this for exam prep or a real compliance decision.</div>
+
+</div>
+
+<!-- Detail panel -->
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+<div class="panel" id="panel">
+  <div class="panel-head">
+    <button class="panel-close" onclick="closePanel()">✕</button>
+    <div class="panel-law" id="p-law">—</div>
+    <div class="panel-law-sub" id="p-lawsub">—</div>
+    <div class="panel-domain" id="p-domain">—</div>
+    <div class="panel-status" id="p-status">—</div>
+    <div class="panel-verified" id="p-verified"></div>
+  </div>
+  <div class="panel-body">
+    <div class="panel-section">
+      <h4>What this law requires</h4>
+      <p id="p-summary">—</p>
+    </div>
+    <div class="panel-section">
+      <h4>Key articles / references</h4>
+      <p><span class="panel-refs" id="p-refs">—</span></p>
+    </div>
+    <div class="panel-section">
+      <h4>AIGP exam relevance</h4>
+      <div class="panel-tip" id="p-tip">—</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+   DATA
+   ========================================================================= */
+// verifiedAt = last date this law's row was checked against primary/reputable sources.
+// PRIMARY_VERIFIED_DAYS below flags anything older as possibly stale — see STALENESS GUARDRAIL.
+const TODAY = '2026-08-17';
+const regions = [
+  { id:'europe', name:'🌍 Europe', color:'eu', laws:[
+    { id:'eu_ai_act', name:'EU AI Act', sub:'2024 · Regulation · High-risk deferred to Dec 2027 (Omnibus, Jul 2026)', country:'EU', primary:true, verifiedAt:'2026-08-17' },
+    { id:'gdpr', name:'EU GDPR', sub:'2018 · Regulation · In force', country:'EU', verifiedAt:'2026-08-17' },
+    { id:'coe_ai_convention', name:'Council of Europe AI Convention', sub:'2024 · Convention · Open for signature', country:'Europe (CoE)', verifiedAt:'2026-08-17' },
+    { id:'uk_ai_framework', name:'UK AI Framework', sub:'2023 · Framework · Voluntary', country:'UK', verifiedAt:'2026-08-17' },
+  ]},
+  { id:'americas', name:'🌎 Americas', color:'americas', laws:[
+    { id:'nist_ai_rmf', name:'NIST AI RMF', sub:'2023 · Framework · Voluntary', country:'US', primary:true, verifiedAt:'2026-08-17' },
+    { id:'us_eo_ai', name:'US Executive Order on AI', sub:'2023 · Exec. Order · Superseded by EO 14179 (Jan 2025)', country:'US', verifiedAt:'2026-08-17' },
+    { id:'nyc_ll144', name:'NYC Local Law 144', sub:'2023 · Local Law · In force', country:'US (NYC)', verifiedAt:'2026-08-17' },
+    { id:'colorado_ai_act', name:'Colorado AI Act', sub:'2024 · State Law · Effective Jun 2026', country:'US (CO)', verifiedAt:'2026-08-17' },
+    { id:'canada_aida', name:'Canada AIDA', sub:'2022 · Bill C-27 · Died on prorogation, Jan 2025', country:'Canada', verifiedAt:'2026-08-17' },
+    { id:'brazil_ai_bill', name:'Brazil AI Bill', sub:'2023 · Bill (PL 2338) · In progress', country:'Brazil', verifiedAt:'2026-08-17' },
+  ]},
+  { id:'apac', name:'🌏 Asia-Pacific', color:'apac', laws:[
+    { id:'skorea_ai_basic_act', name:'South Korea AI Basic Act', sub:'2024 · Law · Effective Jan 2026', country:'South Korea', verifiedAt:'2026-08-17' },
+    { id:'china_genai', name:'China GenAI Regulations', sub:'2023 · Regulation · In force', country:'China', verifiedAt:'2026-08-17' },
+    { id:'singapore_model_ai_gov', name:'Singapore Model AI Governance', sub:'2023 · Framework · Voluntary', country:'Singapore', verifiedAt:'2026-08-17' },
+    { id:'japan_ai_guidelines', name:'Japan AI Guidelines', sub:'2024 · Guidelines · Voluntary', country:'Japan', verifiedAt:'2026-08-17' },
+    { id:'australia_ai_ethics', name:'Australia AI Ethics Framework', sub:'2019 · Framework · Voluntary', country:'Australia', verifiedAt:'2026-08-17' },
+    { id:'india_dpdp', name:'India DPDP Act', sub:'2023 · Law · Partially in force', country:'India', verifiedAt:'2026-08-17' },
+  ]},
+  { id:'international', name:'🌐 International', color:'intl', laws:[
+    { id:'oecd_ai_principles', name:'OECD AI Principles', sub:'2019/2024 · Principles · Voluntary', country:'International', verifiedAt:'2026-08-17' },
+    { id:'g7_hiroshima', name:'G7 Hiroshima Process', sub:'2023 · Voluntary Code', country:'International', verifiedAt:'2026-08-17' },
+    { id:'unesco_ai_ethics', name:'UNESCO AI Ethics Recommendation', sub:'2021 · Recommendation · Voluntary', country:'International', verifiedAt:'2026-08-17' },
+    { id:'iso_42001', name:'ISO/IEC 42001', sub:'2023 · Standard · Published', country:'International', primary:true, verifiedAt:'2026-08-17' },
+  ]},
+];
+const allLaws = regions.flatMap(r => r.laws.map(l => ({...l, regionId:r.id, regionColor:r.color, regionName:r.name})));
+const lawById = Object.fromEntries(allLaws.map(l => [l.id, l]));
+
+const domains = [
+  { id:'risk', icon:'⚠️', name:'Risk Classification & Management', desc:'How AI systems are categorised by risk level' },
+  { id:'governance', icon:'🏛️', name:'Governance & Accountability', desc:'Organisational structures, roles, accountability' },
+  { id:'transparency', icon:'🔍', name:'Transparency & Explainability', desc:'Disclosure obligations; explainability of decisions' },
+  { id:'fairness', icon:'⚖️', name:'Fairness & Non-Discrimination', desc:'Bias prevention; algorithmic discrimination' },
+  { id:'privacy', icon:'🔒', name:'Data Privacy & Protection', desc:'Personal data rules for AI systems' },
+  { id:'oversight', icon:'👁️', name:'Human Oversight & Control', desc:'Human review, intervention, override requirements' },
+  { id:'documentation', icon:'📄', name:'Documentation & Records', desc:'Technical docs, audit logs, record-keeping' },
+  { id:'conformity', icon:'✅', name:'Conformity Assessment & Auditing', desc:'Third-party testing, certification requirements' },
+  { id:'rights', icon:'🙋', name:'Individual Rights & Redress', desc:'Right to challenge/appeal AI decisions' },
+  { id:'prohibited', icon:'🚫', name:'Prohibited AI Practices', desc:'Banned uses of AI technology' },
+  { id:'security', icon:'🛡️', name:'Security & Robustness', desc:'AI system cybersecurity and resilience' },
+  { id:'penalties', icon:'💰', name:'Penalties & Enforcement', desc:'Fines, sanctions, enforcement mechanisms' },
+];
+const domainById = Object.fromEntries(domains.map(d => [d.id, d]));
+
+// The official IAPP AIGP Body of Knowledge (v2.1, effective 2 Feb 2026) has 4 domains —
+// NOT the 12 rows in this tool. The 12 rows are a practitioner comparison taxonomy that
+// slices Domain II (and touches I/III/IV) more finely for side-by-side law comparison.
+// Source: IAPP AIGP Body of Knowledge & Exam Blueprint v2.1; third-party exam-prep summaries.
+const officialBoK = [
+  {id:'I', name:'Domain I — Understanding the Foundations of AI Governance'},
+  {id:'II', name:'Domain II — Understanding How Laws, Standards & Frameworks Apply to AI'},
+  {id:'III', name:'Domain III — Understanding How to Govern AI Development'},
+  {id:'IV', name:'Domain IV — Understanding How to Govern AI Deployment & Use'},
+];
+const domainToBoK = {
+  risk:'II', governance:'I', transparency:'II', fairness:'III', privacy:'II', oversight:'IV',
+  documentation:'III', conformity:'II', rights:'IV', prohibited:'II', security:'III', penalties:'II',
+};
+function toggleScopeDetail(e){
+  e.preventDefault();
+  const el = document.getElementById('scopeDetail');
+  if(el.style.display==='none'){
+    el.innerHTML = `<b>Official AIGP Body of Knowledge v2.1 (4 domains):</b><br>` +
+      officialBoK.map(b=>`<div class="map-row">${b.name}</div>`).join('') +
+      `<br><b>This tool's 12 rows → nearest official domain:</b><br>` +
+      domains.map(d=>`<div class="map-row">${d.icon} ${d.name} → <b>${domainToBoK[d.id]}</b> (${officialBoK.find(b=>b.id===domainToBoK[d.id]).name.split('—')[1].trim()})</div>`).join('') +
+      `<br>Rows often touch more than one official domain (e.g. Fairness shows up in both development and deployment guidance) — this is a many-to-one simplification for comparability, not a 1:1 exam map.`;
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+// matrix[domainId][lawId] = { level, summary, refs }
+const matrix = {
+  risk:{
+    eu_ai_act:{level:'M',summary:'Classifies AI systems into unacceptable, high, limited and minimal risk tiers. The Digital Omnibus on AI (Reg. 2026/1744, in force 27 Jul 2026) deferred stand-alone high-risk (Annex III) obligations to 2 Dec 2027, and Annex I embedded-product obligations to 2 Aug 2028 — the classification rules themselves still apply now.',refs:'Arts. 6–7, Annex III; Omnibus Reg. 2026/1744'},
+    gdpr:{level:'P',summary:'No AI-specific risk tiers, but requires a Data Protection Impact Assessment for processing likely to result in high risk to individuals.',refs:'Art. 35'},
+    coe_ai_convention:{level:'P',summary:'Requires parties to adopt risk and impact assessment measures across the AI lifecycle, but leaves the methodology to domestic implementation.',refs:'Art. 16'},
+    uk_ai_framework:{level:'G',summary:'Proportionality principle asks existing sector regulators to size obligations to risk; no unified risk-tiering system.',refs:'Principle 1 (Safety)'},
+    nist_ai_rmf:{level:'G',summary:'Core voluntary framework organised entirely around risk: Govern–Map–Measure–Manage functions for identifying and treating AI risk.',refs:'RMF Core, Govern/Map/Measure/Manage'},
+    us_eo_ai:{level:'G',summary:'Original 2023 EO directed risk-management standards for safety-critical and dual-use foundation models; largely superseded by the 2025 pro-innovation EO.',refs:'EO 14110, §4 (superseded)'},
+    nyc_ll144:{level:'N',summary:'No general risk classification — the law is narrowly scoped to automated employment decision tools only.',refs:'—'},
+    colorado_ai_act:{level:'M',summary:'Defines "high-risk AI systems" and imposes a reasonable-care duty on developers and deployers to avoid algorithmic discrimination risk.',refs:'Colo. Rev. Stat. §6-1-1702'},
+    canada_aida:{level:'G',summary:'Proposed a "high-impact system" risk category with mitigation duties; died on prorogation of Parliament, Jan 2025 — not enacted.',refs:'Bill C-27, Part 3 (not law)'},
+    brazil_ai_bill:{level:'P',summary:'Proposes an EU-style risk tier (excessive, high, other) for AI systems; still pending in the Chamber of Deputies.',refs:'PL 2338/2023, Arts. 13–14'},
+    skorea_ai_basic_act:{level:'M',summary:'Defines "high-impact AI" across sectors like health, energy and public safety, triggering added safety-officer and assessment duties.',refs:'AI Basic Act, Art. 2(4), Ch. 3'},
+    china_genai:{level:'P',summary:'Requires a security assessment for generative services with "public opinion" or social-mobilisation attributes, not a general risk tier system.',refs:'Interim Measures, Art. 17'},
+    singapore_model_ai_gov:{level:'G',summary:'Recommends a risk- and impact-based approach to determine the level of governance controls to apply.',refs:'Model AI Governance Framework, Pillar 1'},
+    japan_ai_guidelines:{level:'G',summary:'"Agile governance" approach encourages proportionate, iterative risk management rather than fixed tiers.',refs:'AI Guidelines for Business v1.1'},
+    australia_ai_ethics:{level:'G',summary:'Reliability & safety principle references risk management in general terms; no formal tiering.',refs:'AI Ethics Principles (2019)'},
+    india_dpdp:{level:'N',summary:'A data protection statute, not an AI risk law — no AI-specific risk classification.',refs:'—'},
+    oecd_ai_principles:{level:'G',summary:'Principle 1.4 calls for continuous risk management proportionate to context throughout the AI lifecycle.',refs:'OECD AI Principles, 1.4'},
+    g7_hiroshima:{level:'G',summary:'Guiding Principle 1 calls on organisations developing advanced AI to identify, evaluate and mitigate risks across the lifecycle.',refs:'Hiroshima Process, Principle 1'},
+    unesco_ai_ethics:{level:'G',summary:'Calls for risk assessment as part of an ethical impact assessment before and during deployment.',refs:'Recommendation, §Policy Area: Ethical Impact Assessment'},
+    iso_42001:{level:'M',summary:'Risk assessment and treatment is a core, auditable requirement of the AI management system for certified organisations.',refs:'ISO/IEC 42001, Cl. 6.1'},
+  },
+  governance:{
+    eu_ai_act:{level:'M',summary:'Requires quality management systems, designated roles, and deployer governance obligations including AI-literacy duties for staff. AI-literacy (Art. 4) has applied since Feb 2025; most deployer obligations tied to high-risk systems now follow the Omnibus-deferred timeline (Dec 2027 / Aug 2028).',refs:'Arts. 4, 17, 26; Omnibus Reg. 2026/1744'},
+    gdpr:{level:'P',summary:'General accountability principle and mandatory Data Protection Officer for certain processing, but not AI-specific governance structures.',refs:'Arts. 5(2), 24, 37'},
+    coe_ai_convention:{level:'M',summary:'Requires parties to establish or designate oversight mechanisms and ensure accountability for AI activities within their jurisdiction.',refs:'Arts. 22, 26'},
+    uk_ai_framework:{level:'G',summary:'Accountability principle relies on existing sector regulators coordinating rather than a new central authority.',refs:'Principle 5 (Accountability)'},
+    nist_ai_rmf:{level:'G',summary:'The "Govern" function is the framework\'s foundation: culture, roles, and policies for managing AI risk across the org.',refs:'RMF Core, GOVERN 1–6'},
+    us_eo_ai:{level:'G',summary:'2023 EO created new agency coordination structures and a Chief AI Officer requirement for federal agencies; largely superseded in 2025.',refs:'EO 14110, §§4, 10 (superseded)'},
+    nyc_ll144:{level:'N',summary:'No organisational governance mandate beyond the audit and notice duties tied to the specific tool.',refs:'—'},
+    colorado_ai_act:{level:'M',summary:'Deployers of high-risk AI must implement a documented risk-management policy and program.',refs:'Colo. Rev. Stat. §6-1-1703'},
+    canada_aida:{level:'G',summary:'Proposed governance and accountability framework for high-impact systems; not enacted after Bill C-27 died.',refs:'Bill C-27, Part 3 (not law)'},
+    brazil_ai_bill:{level:'P',summary:'Proposes governance obligations mirroring the EU model, including risk-management systems for high-risk AI.',refs:'PL 2338/2023, Art. 16'},
+    skorea_ai_basic_act:{level:'M',summary:'High-impact AI business operators must designate a safety officer and maintain internal governance controls.',refs:'AI Basic Act, Art. 32'},
+    china_genai:{level:'M',summary:'Providers bear primary responsibility for content and must file algorithms with the Cyberspace Administration of China.',refs:'Interim Measures, Arts. 9, 22'},
+    singapore_model_ai_gov:{level:'G',summary:'Recommends internal governance structures, roles and clear policies for AI risk management.',refs:'Model AI Governance Framework, Pillar 1'},
+    japan_ai_guidelines:{level:'G',summary:'Recommends internal governance roles under the agile-governance PDCA cycle.',refs:'AI Guidelines for Business v1.1'},
+    australia_ai_ethics:{level:'G',summary:'Accountability principle expects clear ownership and human accountability for AI system outcomes.',refs:'AI Ethics Principles (2019)'},
+    india_dpdp:{level:'P',summary:'Imposes accountability duties on "Data Fiduciaries" for personal data used in AI, not AI governance broadly.',refs:'DPDP Act 2023, §8'},
+    oecd_ai_principles:{level:'G',summary:'Principle 1.5 calls on organisations to be accountable for the proper functioning of AI systems.',refs:'OECD AI Principles, 1.5'},
+    g7_hiroshima:{level:'G',summary:'Encourages organisations to implement governance and risk-management policies for advanced AI development.',refs:'Hiroshima Process, Principle 2'},
+    unesco_ai_ethics:{level:'G',summary:'Policy Action Area on Governance calls for adaptive governance and multi-stakeholder oversight mechanisms.',refs:'Recommendation, Policy Area: Governance'},
+    iso_42001:{level:'M',summary:'Leadership, roles, responsibilities and authorities for the AI management system are mandatory certifiable clauses.',refs:'ISO/IEC 42001, Cl. 5'},
+  },
+  transparency:{
+    eu_ai_act:{level:'M',summary:'High-risk systems require instructions for use and disclosure to deployers (timeline now deferred with the rest of the high-risk regime). Art. 50 end-user disclosure — chatbots must identify as AI, AI-generated/deepfake content must be labelled — began enforcement on schedule, 2 Aug 2026, with a transition to 2 Dec 2026 for systems already on the market.',refs:'Arts. 13, 50'},
+    gdpr:{level:'M',summary:'Requires informing individuals when personal data is collected, and "meaningful information about the logic involved" in automated decisions.',refs:'Arts. 13–14, 22(3)'},
+    coe_ai_convention:{level:'M',summary:'Requires adequate transparency so affected persons can understand when they are interacting with an AI system and can exercise oversight.',refs:'Art. 8'},
+    uk_ai_framework:{level:'G',summary:'Transparency & explainability is one of five cross-sectoral principles regulators are asked to apply, non-statutory.',refs:'Principle 3'},
+    nist_ai_rmf:{level:'G',summary:'Transparency is listed as a characteristic of trustworthy AI, operationalised through Map/Measure documentation guidance.',refs:'RMF 1.0, §3'},
+    us_eo_ai:{level:'G',summary:'2023 EO directed watermarking/content-provenance guidance for generative AI (via NIST); status uncertain after 2025 EO replaced it.',refs:'EO 14110, §4.5 (superseded)'},
+    nyc_ll144:{level:'M',summary:'Employers must notify candidates/employees at least 10 business days before AEDT use and publish a summary of bias audit results.',refs:'NYC Admin. Code §20-871'},
+    colorado_ai_act:{level:'M',summary:'Deployers must give consumers notice when a high-risk AI system is used to make a consequential decision about them.',refs:'Colo. Rev. Stat. §6-1-1704'},
+    canada_aida:{level:'G',summary:'Proposed plain-language disclosure duties for high-impact systems; not enacted.',refs:'Bill C-27, Part 3 (not law)'},
+    brazil_ai_bill:{level:'P',summary:'Proposes a general right to be informed about AI interactions and system characteristics.',refs:'PL 2338/2023, Art. 6'},
+    skorea_ai_basic_act:{level:'M',summary:'Requires labelling of AI-generated content and disclosure that a user is interacting with an AI system.',refs:'AI Basic Act, Art. 31'},
+    china_genai:{level:'M',summary:'Generative content must be labelled, and providers must inform users when content is AI-generated.',refs:'Interim Measures, Art. 12'},
+    singapore_model_ai_gov:{level:'G',summary:'Transparency principle recommends proactive disclosure of AI use and its role in decisions.',refs:'Model AI Governance Framework, Pillar 2'},
+    japan_ai_guidelines:{level:'G',summary:'Encourages disclosure of AI use and system limitations to users, non-binding.',refs:'AI Guidelines for Business v1.1'},
+    australia_ai_ethics:{level:'G',summary:'Transparency & explainability principle recommends responsible disclosure of AI use.',refs:'AI Ethics Principles (2019)'},
+    india_dpdp:{level:'P',summary:'Requires notice to data principals about personal data processing, not AI-specific transparency.',refs:'DPDP Act 2023, §5'},
+    oecd_ai_principles:{level:'G',summary:'Principle 1.3 calls for transparency and responsible disclosure around AI systems.',refs:'OECD AI Principles, 1.3'},
+    g7_hiroshima:{level:'G',summary:'Calls for public reporting of advanced AI systems\' capabilities, limitations and appropriate use.',refs:'Hiroshima Process, Principle 4'},
+    unesco_ai_ethics:{level:'G',summary:'Transparency and explainability listed as core values throughout the AI system lifecycle.',refs:'Recommendation, Value 4'},
+    iso_42001:{level:'P',summary:'Annex A includes a transparency control for AI systems, applied at the organisation\'s discretion within the AIMS.',refs:'ISO/IEC 42001, Annex A.7.2'},
+  },
+  fairness:{
+    eu_ai_act:{level:'P',summary:'High-risk systems must use data governance practices that examine bias; no freestanding non-discrimination regime beyond that.',refs:'Art. 10(2)(f)'},
+    gdpr:{level:'P',summary:'The fairness principle underlies all processing, but GDPR has no dedicated algorithmic-bias testing requirement.',refs:'Art. 5(1)(a)'},
+    coe_ai_convention:{level:'M',summary:'Parties must ensure AI activities respect equality, including gender equality, and prohibit unlawful discrimination.',refs:'Arts. 10–11'},
+    uk_ai_framework:{level:'G',summary:'Fairness is a cross-sectoral principle; binding anti-discrimination obligations still flow from the existing Equality Act 2010.',refs:'Principle 2'},
+    nist_ai_rmf:{level:'G',summary:'Fairness and bias management (including harmful bias) is a named trustworthiness characteristic with mapping/measurement guidance.',refs:'RMF 1.0, §3'},
+    us_eo_ai:{level:'G',summary:'2023 EO directed agencies to guard against algorithmic discrimination in areas like housing and benefits; superseded emphasis in 2025.',refs:'EO 14110, §7 (superseded)'},
+    nyc_ll144:{level:'M',summary:'Core purpose of the law: mandatory independent bias audit testing for disparate impact by sex, race/ethnicity categories.',refs:'NYC Admin. Code §20-870'},
+    colorado_ai_act:{level:'M',summary:'Central obligation is preventing "algorithmic discrimination" in consequential decisions from high-risk AI systems.',refs:'Colo. Rev. Stat. §6-1-1701(1)'},
+    canada_aida:{level:'G',summary:'Proposed bias-mitigation obligations for high-impact systems; not enacted.',refs:'Bill C-27, Part 3 (not law)'},
+    brazil_ai_bill:{level:'M',summary:'Non-discrimination is a foundational right and principle throughout the bill, with duties to prevent discriminatory bias.',refs:'PL 2338/2023, Arts. 4, 20'},
+    skorea_ai_basic_act:{level:'P',summary:'References fairness among general principles for trustworthy AI, with less prescriptive testing detail than the EU or Colorado.',refs:'AI Basic Act, Art. 3'},
+    china_genai:{level:'M',summary:'Providers must prevent discrimination based on race, ethnicity, religion, gender or nationality in algorithm design.',refs:'Interim Measures, Art. 4(2)'},
+    singapore_model_ai_gov:{level:'G',summary:'Fairness principle recommends bias testing and inclusive design during development.',refs:'Model AI Governance Framework, Pillar 2'},
+    japan_ai_guidelines:{level:'G',summary:'Fairness listed among the AI principles businesses are encouraged to uphold; non-binding.',refs:'AI Guidelines for Business v1.1'},
+    australia_ai_ethics:{level:'G',summary:'Fairness principle: AI systems should be inclusive and accessible, and not result in unfair discrimination.',refs:'AI Ethics Principles (2019)'},
+    india_dpdp:{level:'N',summary:'A data protection law with no algorithmic-fairness or anti-discrimination provisions.',refs:'—'},
+    oecd_ai_principles:{level:'G',summary:'Principle 1.2 calls for AI that respects human rights, democratic values and diversity, including fairness.',refs:'OECD AI Principles, 1.2'},
+    g7_hiroshima:{level:'N',summary:'Focused on advanced-model safety and security; does not directly address algorithmic fairness/bias testing.',refs:'—'},
+    unesco_ai_ethics:{level:'G',summary:'Fairness and non-discrimination is an explicit named value with dedicated policy guidance.',refs:'Recommendation, Value 2'},
+    iso_42001:{level:'P',summary:'Annex A includes a control addressing fairness/bias in AI system data and outcomes, applied per organisational context.',refs:'ISO/IEC 42001, Annex A.7.4'},
+  },
+  privacy:{
+    eu_ai_act:{level:'P',summary:'References data governance and quality for training data but does not itself set personal-data rules — GDPR governs those.',refs:'Art. 10'},
+    gdpr:{level:'M',summary:'The EU\'s comprehensive personal data protection regime; governs all personal data used to build or run AI systems.',refs:'Full Regulation'},
+    coe_ai_convention:{level:'P',summary:'Requires respect for privacy and personal data protection but defers to parties\' existing data-protection frameworks.',refs:'Art. 12'},
+    uk_ai_framework:{level:'P',summary:'Leverages existing UK GDPR rather than introducing new AI-specific data-protection rules.',refs:'Cross-reference to UK GDPR'},
+    nist_ai_rmf:{level:'G',summary:'Privacy-enhanced is a named trustworthiness characteristic; cross-references the separate NIST Privacy Framework.',refs:'RMF 1.0, §3; NIST Privacy Framework'},
+    us_eo_ai:{level:'G',summary:'2023 EO directed agencies to evaluate commercial data-privacy practices used to train AI; largely superseded in 2025.',refs:'EO 14110, §9 (superseded)'},
+    nyc_ll144:{level:'N',summary:'Not a data-protection law — silent on personal-data handling beyond the audit itself.',refs:'—'},
+    colorado_ai_act:{level:'P',summary:'Interacts with the separate Colorado Privacy Act but does not itself set comprehensive data-protection rules.',refs:'Cross-reference to Colo. Privacy Act'},
+    canada_aida:{level:'N',summary:'Focused on AI systems, not personal data protection (that sits under Canada\'s PIPEDA); not enacted regardless.',refs:'—'},
+    brazil_ai_bill:{level:'P',summary:'Builds on Brazil\'s existing LGPD (data protection law) for personal-data aspects of AI processing.',refs:'PL 2338/2023, Art. 5; LGPD'},
+    skorea_ai_basic_act:{level:'P',summary:'Cross-references Korea\'s Personal Information Protection Act (PIPA) rather than setting new data rules.',refs:'AI Basic Act, Art. 4; PIPA'},
+    china_genai:{level:'M',summary:'Providers must comply with the Personal Information Protection Law (PIPL) for any personal data used in generative AI.',refs:'Interim Measures, Art. 11; PIPL'},
+    singapore_model_ai_gov:{level:'P',summary:'Recommends alignment with Singapore\'s Personal Data Protection Act (PDPA) for AI data handling.',refs:'Model AI Governance Framework; PDPA'},
+    japan_ai_guidelines:{level:'P',summary:'References Japan\'s Act on Protection of Personal Information (APPI) for data-handling aspects.',refs:'AI Guidelines for Business v1.1; APPI'},
+    australia_ai_ethics:{level:'P',summary:'References the existing Privacy Act 1988 for personal-data handling; not AI-specific.',refs:'AI Ethics Principles; Privacy Act 1988'},
+    india_dpdp:{level:'M',summary:'India\'s comprehensive personal-data protection statute; directly governs personal data used in AI systems.',refs:'Full Act'},
+    oecd_ai_principles:{level:'G',summary:'Principle 1.2 references privacy and data protection as values AI actors should respect throughout the lifecycle.',refs:'OECD AI Principles, 1.2'},
+    g7_hiroshima:{level:'N',summary:'Focused on advanced-model safety/security; does not set data-privacy rules.',refs:'—'},
+    unesco_ai_ethics:{level:'G',summary:'Right to privacy and data protection is an explicit named value with policy guidance.',refs:'Recommendation, Value 5'},
+    iso_42001:{level:'N',summary:'Not a privacy standard; organisations typically pair it with ISO/IEC 27701 for privacy information management.',refs:'—'},
+  },
+  oversight:{
+    eu_ai_act:{level:'M',summary:'High-risk systems must be designed to enable effective human oversight, including the ability to intervene or override. As a high-risk obligation, enforceability now follows the Omnibus-deferred timeline: 2 Dec 2027 for stand-alone Annex III systems, 2 Aug 2028 for Annex I embedded products.',refs:'Art. 14; Omnibus Reg. 2026/1744'},
+    gdpr:{level:'M',summary:'Individuals have the right not to be subject to a decision based solely on automated processing with legal/similarly significant effects, absent safeguards including human intervention.',refs:'Art. 22'},
+    coe_ai_convention:{level:'M',summary:'Requires measures ensuring appropriate human oversight commensurate with the risks and impacts of the AI system.',refs:'Art. 8'},
+    uk_ai_framework:{level:'G',summary:'Contestability & redress principle implies a route to human review, but no codified oversight mandate.',refs:'Principle 5'},
+    nist_ai_rmf:{level:'G',summary:'Guidance on human-AI configuration and appropriate levels of human involvement is part of the Map/Manage functions.',refs:'RMF 1.0, §3'},
+    us_eo_ai:{level:'G',summary:'2023 EO emphasised human oversight for high-risk federal AI use cases; superseded emphasis under the 2025 EO.',refs:'EO 14110, §10.1(b) (superseded)'},
+    nyc_ll144:{level:'N',summary:'No human-in-the-loop mandate — the law addresses bias auditing and notice, not oversight mechanics.',refs:'—'},
+    colorado_ai_act:{level:'P',summary:'Impact assessments must describe the extent of human oversight, but there is no strict human-in-the-loop mandate.',refs:'Colo. Rev. Stat. §6-1-1703(3)'},
+    canada_aida:{level:'G',summary:'Proposed human oversight expectations for high-impact systems; not enacted.',refs:'Bill C-27, Part 3 (not law)'},
+    brazil_ai_bill:{level:'P',summary:'Proposes a right to human review of significant automated decisions in certain circumstances.',refs:'PL 2338/2023, Art. 7'},
+    skorea_ai_basic_act:{level:'P',summary:'High-impact AI safety obligations reference human oversight measures without a detailed override mandate.',refs:'AI Basic Act, Art. 33'},
+    china_genai:{level:'N',summary:'No explicit human-in-the-loop or override requirement in the interim measures.',refs:'—'},
+    singapore_model_ai_gov:{level:'G',summary:'Recommends human-in-the-loop, human-out-of-the-loop or human-over-the-loop configurations based on risk.',refs:'Model AI Governance Framework, Pillar 1'},
+    japan_ai_guidelines:{level:'G',summary:'Encourages human involvement calibrated to risk under the agile-governance approach.',refs:'AI Guidelines for Business v1.1'},
+    australia_ai_ethics:{level:'G',summary:'Human, societal and environmental wellbeing and contestability principles imply meaningful human control.',refs:'AI Ethics Principles (2019)'},
+    india_dpdp:{level:'N',summary:'A data-protection statute; does not address human oversight of AI decision-making.',refs:'—'},
+    oecd_ai_principles:{level:'G',summary:'Principle 1.2 calls for AI systems that include appropriate human oversight mechanisms.',refs:'OECD AI Principles, 1.2'},
+    g7_hiroshima:{level:'G',summary:'Encourages human oversight as part of responsible deployment of advanced AI systems.',refs:'Hiroshima Process, Principle 3'},
+    unesco_ai_ethics:{level:'G',summary:'Human oversight and determination is an explicit named value — humans, not machines, hold ultimate responsibility.',refs:'Recommendation, Value 6'},
+    iso_42001:{level:'P',summary:'Annex A includes a control on human oversight of AI system operation, scoped by the organisation\'s risk assessment.',refs:'ISO/IEC 42001, Annex A.9'},
+  },
+  documentation:{
+    eu_ai_act:{level:'M',summary:'Extensive technical documentation and automatic logging requirements for high-risk systems, per a prescribed Annex format — now due on the Omnibus-deferred timeline (Dec 2027 stand-alone / Aug 2028 embedded), not the original Aug 2026 date.',refs:'Arts. 11–12, Annex IV; Omnibus Reg. 2026/1744'},
+    gdpr:{level:'M',summary:'Requires records of processing activities and documented DPIAs for high-risk processing.',refs:'Arts. 30, 35'},
+    coe_ai_convention:{level:'P',summary:'Documentation implied through the risk/impact assessment duty, without a prescribed technical-file format.',refs:'Art. 16'},
+    uk_ai_framework:{level:'G',summary:'Documentation expectations flow from individual sector regulators\' existing guidance, not a unified statute.',refs:'—'},
+    nist_ai_rmf:{level:'G',summary:'The Measure function includes detailed guidance on documenting AI system performance, risk and limitations.',refs:'RMF 1.0, MEASURE 2–4'},
+    us_eo_ai:{level:'G',summary:'2023 EO directed reporting requirements for large dual-use foundation model training; status affected by 2025 EO.',refs:'EO 14110, §4.2 (superseded)'},
+    nyc_ll144:{level:'M',summary:'Requires publishing a summary of bias audit results and retaining underlying data for the audit.',refs:'NYC Admin. Code §20-871'},
+    colorado_ai_act:{level:'M',summary:'Requires developers and deployers to document risk-management policies and complete impact assessments.',refs:'Colo. Rev. Stat. §6-1-1703–1704'},
+    canada_aida:{level:'G',summary:'Proposed record-keeping duties for high-impact systems; not enacted.',refs:'Bill C-27, Part 3 (not law)'},
+    brazil_ai_bill:{level:'P',summary:'Proposes technical documentation duties for high-risk AI, modelled on the EU approach.',refs:'PL 2338/2023, Art. 15'},
+    skorea_ai_basic_act:{level:'M',summary:'High-impact AI operators must maintain records and complete assessments demonstrating compliance.',refs:'AI Basic Act, Arts. 32–34'},
+    china_genai:{level:'M',summary:'Algorithm filing with the CAC functions as a mandatory documentation/registration requirement.',refs:'Interim Measures, Art. 22'},
+    singapore_model_ai_gov:{level:'G',summary:'Recommends maintaining documentation of decisions, data lineage and testing as good practice.',refs:'Model AI Governance Framework, Pillar 3'},
+    japan_ai_guidelines:{level:'G',summary:'Encourages documentation as part of the agile-governance PDCA cycle; non-binding.',refs:'AI Guidelines for Business v1.1'},
+    australia_ai_ethics:{level:'N',summary:'No documentation requirements specified in the voluntary ethics principles.',refs:'—'},
+    india_dpdp:{level:'P',summary:'Data Fiduciaries must maintain records to demonstrate compliance with data-processing obligations.',refs:'DPDP Act 2023, §8'},
+    oecd_ai_principles:{level:'G',summary:'Documentation supports the transparency and accountability principles, without prescribed formats.',refs:'OECD AI Principles, 1.3, 1.5'},
+    g7_hiroshima:{level:'G',summary:'Encourages documentation of model capabilities, limitations and appropriate/inappropriate uses.',refs:'Hiroshima Process, Principle 4'},
+    unesco_ai_ethics:{level:'N',summary:'High-level ethical recommendation without prescribed documentation mechanics.',refs:'—'},
+    iso_42001:{level:'M',summary:'Documented information is a core, auditable clause underpinning the entire AI management system.',refs:'ISO/IEC 42001, Cl. 7.5'},
+  },
+  conformity:{
+    eu_ai_act:{level:'M',summary:'High-risk systems require conformity assessment (self- or third-party, depending on category) and CE marking before market placement — deferred with the rest of the high-risk regime to 2 Dec 2027 (stand-alone) / 2 Aug 2028 (embedded).',refs:'Art. 43, Annexes VI–VII; Omnibus Reg. 2026/1744'},
+    gdpr:{level:'P',summary:'Offers a voluntary certification mechanism, but no mandatory third-party AI conformity assessment.',refs:'Art. 42'},
+    coe_ai_convention:{level:'N',summary:'No third-party certification regime; compliance is left to domestic implementation and oversight bodies.',refs:'—'},
+    uk_ai_framework:{level:'N',summary:'No conformity assessment or certification regime introduced by the framework.',refs:'—'},
+    nist_ai_rmf:{level:'N',summary:'Provides self-assessment guidance and a companion Generative AI Profile, but no certification/audit scheme.',refs:'—'},
+    us_eo_ai:{level:'G',summary:'2023 EO directed NIST to develop red-teaming and evaluation guidance for advanced models; not a certification mandate.',refs:'EO 14110, §4.1 (superseded)'},
+    nyc_ll144:{level:'M',summary:'Core mechanism of the law: a mandatory independent (third-party) bias audit before and annually during tool use.',refs:'NYC Admin. Code §20-870'},
+    colorado_ai_act:{level:'N',summary:'Relies on self-conducted impact assessments; no independent certification or conformity regime.',refs:'—'},
+    canada_aida:{level:'N',summary:'No certification regime was proposed, and the bill was not enacted.',refs:'—'},
+    brazil_ai_bill:{level:'N',summary:'No third-party conformity assessment mechanism currently proposed.',refs:'—'},
+    skorea_ai_basic_act:{level:'P',summary:'Provides for government-issued guidelines and potential certification schemes, details left to subordinate regulation.',refs:'AI Basic Act, Art. 35'},
+    china_genai:{level:'M',summary:'Mandatory security assessment and algorithm filing with the CAC operate as a de facto pre-market approval regime.',refs:'Interim Measures, Arts. 17, 22'},
+    singapore_model_ai_gov:{level:'N',summary:'No certification regime; the related AI Verify toolkit offers voluntary self-testing only.',refs:'AI Verify (voluntary)'},
+    japan_ai_guidelines:{level:'N',summary:'No conformity assessment or certification scheme in the voluntary guidelines.',refs:'—'},
+    australia_ai_ethics:{level:'N',summary:'No certification or third-party audit mechanism in the voluntary principles.',refs:'—'},
+    india_dpdp:{level:'N',summary:'A data-protection statute; no AI conformity assessment provisions.',refs:'—'},
+    oecd_ai_principles:{level:'N',summary:'High-level principles only; no certification or conformity mechanism.',refs:'—'},
+    g7_hiroshima:{level:'N',summary:'Voluntary code of conduct; no third-party testing or certification regime.',refs:'—'},
+    unesco_ai_ethics:{level:'N',summary:'Normative recommendation; no certification mechanism attached.',refs:'—'},
+    iso_42001:{level:'M',summary:'The standard\'s core purpose: organisations can be independently audited and certified against its requirements.',refs:'ISO/IEC 42001, Cl. 9, Certification Scheme'},
+  },
+  rights:{
+    eu_ai_act:{level:'M',summary:'Affected persons have the right to lodge a complaint with a market surveillance authority and a right to explanation of individual decision-making for certain high-risk systems.',refs:'Arts. 85–86'},
+    gdpr:{level:'M',summary:'Comprehensive data-subject rights including access, rectification, erasure, and the right to contest solely automated decisions.',refs:'Arts. 15–22, 77'},
+    coe_ai_convention:{level:'M',summary:'Requires accessible remedies and procedural safeguards for individuals whose rights are affected by AI systems.',refs:'Arts. 14–15'},
+    uk_ai_framework:{level:'G',summary:'Contestability & redress is one of the five principles, implemented via existing sector-regulator complaint routes.',refs:'Principle 5'},
+    nist_ai_rmf:{level:'N',summary:'A risk-management framework for organisations; does not create individual redress rights.',refs:'—'},
+    us_eo_ai:{level:'N',summary:'Directed agency actions and studies; did not create new individual rights of action.',refs:'—'},
+    nyc_ll144:{level:'P',summary:'Candidates may request the type of data collected and the source, but there is no broader statutory appeal right.',refs:'NYC Admin. Code §20-871(b)'},
+    colorado_ai_act:{level:'M',summary:'Consumers have the right to notice, an explanation of an adverse decision, and an opportunity to correct data or appeal.',refs:'Colo. Rev. Stat. §6-1-1704(3)'},
+    canada_aida:{level:'N',summary:'No individual redress mechanism was enacted; the bill died on prorogation.',refs:'—'},
+    brazil_ai_bill:{level:'P',summary:'Proposes a right to request review of significant decisions made solely by AI, echoing LGPD Art. 20.',refs:'PL 2338/2023, Art. 7; LGPD Art. 20'},
+    skorea_ai_basic_act:{level:'P',summary:'Provides narrower explicit redress mechanisms than the EU model; complaint routes largely run through PIPA for data matters.',refs:'AI Basic Act, Art. 36'},
+    china_genai:{level:'P',summary:'Requires providers to establish channels for complaints and reports about generative AI services.',refs:'Interim Measures, Art. 15'},
+    singapore_model_ai_gov:{level:'N',summary:'Voluntary framework; no individual redress mechanism created.',refs:'—'},
+    japan_ai_guidelines:{level:'N',summary:'Voluntary guidelines; no statutory redress mechanism.',refs:'—'},
+    australia_ai_ethics:{level:'G',summary:'Contestability principle recommends timely processes to challenge and seek redress for AI-driven outcomes.',refs:'AI Ethics Principles (2019)'},
+    india_dpdp:{level:'M',summary:'Data Principals have rights to access, correction, erasure and grievance redressal against Data Fiduciaries.',refs:'DPDP Act 2023, §§11–13'},
+    oecd_ai_principles:{level:'G',summary:'Calls generally for accessible redress mechanisms when AI systems cause harm, without binding detail.',refs:'OECD AI Principles, 1.5'},
+    g7_hiroshima:{level:'N',summary:'Focused on developer conduct for advanced models; does not create individual redress rights.',refs:'—'},
+    unesco_ai_ethics:{level:'G',summary:'Access to effective remedy is a dedicated Policy Action Area in the recommendation.',refs:'Recommendation, Policy Area: Access to Remedy'},
+    iso_42001:{level:'N',summary:'An organisation-facing management standard; creates no individual redress rights.',refs:'—'},
+  },
+  prohibited:{
+    eu_ai_act:{level:'M',summary:'Bans specific practices outright: social scoring, certain biometric categorisation, manipulative/subliminal techniques, and (with narrow exceptions) real-time remote biometric ID in public spaces.',refs:'Art. 5'},
+    gdpr:{level:'P',summary:'Prohibits processing special-category data absent an exception, and restricts (rather than bans) solely automated decisions with legal effect.',refs:'Arts. 9, 22'},
+    coe_ai_convention:{level:'P',summary:'Leaves specific prohibitions largely to domestic law, with national-security matters expressly out of scope.',refs:'Art. 3'},
+    uk_ai_framework:{level:'N',summary:'No prohibited-practices list; relies on existing sectoral law for any bans.',refs:'—'},
+    nist_ai_rmf:{level:'N',summary:'A risk-management framework, not a prohibitions regime.',refs:'—'},
+    us_eo_ai:{level:'N',summary:'Directed studies and guidance rather than banning specific AI uses outright.',refs:'—'},
+    nyc_ll144:{level:'N',summary:'Regulates use of a specific tool category; does not ban any AI practice.',refs:'—'},
+    colorado_ai_act:{level:'N',summary:'A high-risk-management statute rather than a categorical-ban statute.',refs:'—'},
+    canada_aida:{level:'P',summary:'Proposed restrictions on certain high-impact uses; not enacted after the bill died.',refs:'Bill C-27, Part 3 (not law)'},
+    brazil_ai_bill:{level:'P',summary:'Proposes prohibitions similar to the EU\'s, including social scoring and certain covert manipulation techniques.',refs:'PL 2338/2023, Art. 14'},
+    skorea_ai_basic_act:{level:'N',summary:'Focuses on high-impact AI safety duties rather than an EU Art. 5-style prohibited-practices list.',refs:'—'},
+    china_genai:{level:'M',summary:'Generated content must not violate core socialist values or fall into listed prohibited categories (e.g. subverting state power, disrupting economic order).',refs:'Interim Measures, Art. 4(1)'},
+    singapore_model_ai_gov:{level:'N',summary:'A voluntary governance framework with no prohibited-uses list.',refs:'—'},
+    japan_ai_guidelines:{level:'N',summary:'Voluntary guidelines; no prohibited-practices list.',refs:'—'},
+    australia_ai_ethics:{level:'N',summary:'Voluntary ethics principles; no legal prohibitions attached.',refs:'—'},
+    india_dpdp:{level:'N',summary:'A data-protection statute; not a prohibited-AI-practices regime.',refs:'—'},
+    oecd_ai_principles:{level:'N',summary:'High-level principles; does not enumerate prohibited AI practices.',refs:'—'},
+    g7_hiroshima:{level:'N',summary:'A voluntary code of conduct; does not prohibit specific AI practices.',refs:'—'},
+    unesco_ai_ethics:{level:'P',summary:'Cautions against mass surveillance and social-scoring systems as incompatible with the recommendation\'s values, without binding force.',refs:'Recommendation, §Policy Area: Data Governance'},
+    iso_42001:{level:'N',summary:'A management-system standard; does not prohibit specific AI practices.',refs:'—'},
+  },
+  security:{
+    eu_ai_act:{level:'M',summary:'High-risk systems must achieve appropriate levels of accuracy, robustness and cybersecurity throughout their lifecycle.',refs:'Art. 15'},
+    gdpr:{level:'M',summary:'Requires appropriate technical and organisational measures to ensure security of personal data processing.',refs:'Art. 32'},
+    coe_ai_convention:{level:'P',summary:'Safety is referenced as a general obligation, without prescriptive technical security requirements.',refs:'Art. 9'},
+    uk_ai_framework:{level:'G',summary:'Safety, security & robustness is one of the five cross-sectoral principles.',refs:'Principle 1'},
+    nist_ai_rmf:{level:'G',summary:'Secure and resilient is a named trustworthiness characteristic, with associated mapping/measurement guidance.',refs:'RMF 1.0, §3'},
+    us_eo_ai:{level:'M',summary:'2023 EO required safety-test-result reporting for the most powerful dual-use foundation models under the Defense Production Act; superseded in 2025.',refs:'EO 14110, §4.2(a) (superseded)'},
+    nyc_ll144:{level:'N',summary:'No cybersecurity or robustness provisions — the law is scoped to bias auditing.',refs:'—'},
+    colorado_ai_act:{level:'N',summary:'Focused on algorithmic discrimination and consumer notice, not system security/robustness.',refs:'—'},
+    canada_aida:{level:'G',summary:'Proposed general safety obligations for high-impact systems; not enacted.',refs:'Bill C-27, Part 3 (not law)'},
+    brazil_ai_bill:{level:'N',summary:'No dedicated cybersecurity/robustness provisions in the current bill text.',refs:'—'},
+    skorea_ai_basic_act:{level:'M',summary:'High-impact AI operators must implement safety and reliability measures, including testing before deployment.',refs:'AI Basic Act, Art. 33'},
+    china_genai:{level:'M',summary:'Providers must undergo a security assessment and implement content/technical safeguards before public release.',refs:'Interim Measures, Art. 17'},
+    singapore_model_ai_gov:{level:'G',summary:'Robustness and resilience are recommended as part of the operations-management pillar.',refs:'Model AI Governance Framework, Pillar 3'},
+    japan_ai_guidelines:{level:'G',summary:'Encourages safety and security measures as part of responsible AI development.',refs:'AI Guidelines for Business v1.1'},
+    australia_ai_ethics:{level:'G',summary:'Reliability & safety principle recommends AI systems operate reliably per intended purpose.',refs:'AI Ethics Principles (2019)'},
+    india_dpdp:{level:'P',summary:'Requires "reasonable security safeguards" for personal data, not AI system security generally.',refs:'DPDP Act 2023, §8(5)'},
+    oecd_ai_principles:{level:'G',summary:'Principle 1.4 calls for robustness, security and safety across the AI system lifecycle.',refs:'OECD AI Principles, 1.4'},
+    g7_hiroshima:{level:'M',summary:'Central focus of the code: security testing, red-teaming and vulnerability management for advanced AI systems.',refs:'Hiroshima Process, Principles 1, 6'},
+    unesco_ai_ethics:{level:'G',summary:'Safety and security is a named value calling for risk mitigation throughout the AI lifecycle.',refs:'Recommendation, Value 3'},
+    iso_42001:{level:'P',summary:'References security controls for the AI system, often implemented alongside ISO/IEC 27001.',refs:'ISO/IEC 42001, Annex A.6'},
+  },
+  penalties:{
+    eu_ai_act:{level:'M',summary:'Tiered administrative fines up to €35M or 7% of global annual turnover for prohibited-practice breaches, with lower tiers for other violations.',refs:'Art. 99'},
+    gdpr:{level:'M',summary:'Administrative fines up to €20M or 4% of global annual turnover for the most serious infringements.',refs:'Art. 83'},
+    coe_ai_convention:{level:'N',summary:'A framework convention — enforcement mechanisms and penalties are left entirely to domestic implementing legislation.',refs:'—'},
+    uk_ai_framework:{level:'N',summary:'No new penalty regime; existing regulators use their existing statutory powers.',refs:'—'},
+    nist_ai_rmf:{level:'N',summary:'Voluntary framework — no penalties attach to non-adoption.',refs:'—'},
+    us_eo_ai:{level:'N',summary:'Directed agency action rather than creating a private penalty regime.',refs:'—'},
+    nyc_ll144:{level:'M',summary:'Civil penalties of $500–$1,500 per violation, with each day of non-compliant use counted separately.',refs:'NYC Admin. Code §20-872'},
+    colorado_ai_act:{level:'M',summary:'Enforced exclusively by the Colorado Attorney General as an unfair/deceptive trade practice, with associated civil penalties.',refs:'Colo. Rev. Stat. §6-1-1706'},
+    canada_aida:{level:'N',summary:'Proposed significant administrative monetary penalties; moot after the bill was not enacted.',refs:'Bill C-27, Part 3 (not law)'},
+    brazil_ai_bill:{level:'N',summary:'Enforcement and penalty mechanisms remain pending finalisation as the bill moves through Congress.',refs:'PL 2338/2023 (pending)'},
+    skorea_ai_basic_act:{level:'P',summary:'Provides for administrative fines and corrective orders, generally less severe than the EU\'s turnover-based fines.',refs:'AI Basic Act, Ch. 6'},
+    china_genai:{level:'M',summary:'Regulators can order rectification, suspend services, and impose fines for non-compliant generative AI services.',refs:'Interim Measures, Art. 21'},
+    singapore_model_ai_gov:{level:'N',summary:'A voluntary framework — no penalties attach to non-adoption.',refs:'—'},
+    japan_ai_guidelines:{level:'N',summary:'Voluntary guidelines carry no statutory penalties.',refs:'—'},
+    australia_ai_ethics:{level:'N',summary:'Voluntary principles carry no enforcement mechanism of their own.',refs:'—'},
+    india_dpdp:{level:'M',summary:'Financial penalties of up to ₹250 crore (~US$30M) per instance for significant data-protection breaches.',refs:'DPDP Act 2023, Sch. 1'},
+    oecd_ai_principles:{level:'N',summary:'Non-binding principles — no penalty mechanism.',refs:'—'},
+    g7_hiroshima:{level:'N',summary:'A voluntary code of conduct with no enforcement or penalty mechanism.',refs:'—'},
+    unesco_ai_ethics:{level:'N',summary:'A normative recommendation adopted by member states — no penalty mechanism.',refs:'—'},
+    iso_42001:{level:'N',summary:'No legal penalties; non-conformance results in loss or denial of certification only.',refs:'—'},
+  },
+};
+
+/* =========================================================================
+   TIP GENERATOR (AIGP exam relevance) — computed, not hand-authored per cell
+   ========================================================================= */
+function examTip(law, domain, level){
+  if(law.primary){
+    const weight = level==='M' ? 'a binding, precisely-worded obligation' : level==='P' ? 'a partial / indirect obligation — know exactly what is and isn\'t covered' : level==='G' ? 'a voluntary recommendation, not a legal requirement' : 'an explicit gap — know why this framework stays silent here';
+    const crossCheck = law.id==='eu_ai_act' ? 'Use this row as the reference point when cross-checking NIST AI RMF and ISO/IEC 42001 on the same domain.' : 'Cross-check this cell against the EU AI Act row for contrast.';
+    return `${law.name} is one of the 3 frameworks AIGP exam-prep material returns to repeatedly across the Body of Knowledge. For ${domain.name}, expect the exam to test ${weight}. ${crossCheck}`;
+  }
+  if(level==='M') return `Less commonly tested than the ★ frameworks, but useful as a comparison point: this is a hard legal requirement, not guidance.`;
+  if(level==='P') return `Good for "which laws partially cover X" style questions — note what triggers the partial coverage.`;
+  if(level==='G') return `Useful to contrast "voluntary" vs "mandatory" framing — the exam often tests this distinction directly.`;
+  return `The absence of coverage is itself testable — be ready to explain why this framework doesn't reach this domain.`;
+}
+
+/* =========================================================================
+   STALENESS GUARDRAIL — computed against the real clock, not a hardcoded date,
+   so this keeps working correctly no matter when the file is opened.
+   ========================================================================= */
+const STALE_AFTER_DAYS = 180;
+function isStale(dateStr){
+  if(!dateStr) return true;
+  const days = (new Date() - new Date(dateStr)) / (1000*60*60*24);
+  return days > STALE_AFTER_DAYS;
+}
+function renderStalenessFooter(){
+  const el = document.getElementById('stalenessFooter');
+  if(!el) return;
+  const stale = allLaws.filter(l => isStale(l.verifiedAt));
+  const oldest = allLaws.reduce((min,l)=> (!l.verifiedAt || (min && new Date(l.verifiedAt) < new Date(min))) ? (l.verifiedAt||min) : min, allLaws[0].verifiedAt);
+  if(stale.length){
+    el.innerHTML = `⚠️ <b>${stale.length} law${stale.length>1?'s':''}</b> not re-verified in over ${STALE_AFTER_DAYS} days: ${stale.map(l=>l.name).join(', ')}. Ask your assistant to re-verify these against current sources before relying on them.`;
+    el.classList.add('stale');
+  } else {
+    el.innerHTML = `✅ All 20 laws were last verified on ${oldest}. This is a static file — it will not update itself. Ask your assistant to re-verify content periodically; entries older than ${STALE_AFTER_DAYS} days will be flagged here automatically.`;
+    el.classList.remove('stale');
+  }
+}
+
+/* =========================================================================
+   STATE
+   ========================================================================= */
+let state = {
+  mode:'matrix',
+  region:'all',
+  domainFilter:new Set(),
+  search:'',
+};
+
+/* =========================================================================
+   MATRIX RENDER
+   ========================================================================= */
+function setMode(m){
+  state.mode = m;
+  document.getElementById('modeMatrixBtn').classList.toggle('active', m==='matrix');
+  document.getElementById('modeCompareBtn').classList.toggle('active', m==='compare');
+  document.getElementById('modeFinderBtn').classList.toggle('active', m==='finder');
+  document.getElementById('view-matrix').classList.toggle('active', m==='matrix');
+  document.getElementById('view-compare').classList.toggle('active', m==='compare');
+  document.getElementById('view-finder').classList.toggle('active', m==='finder');
+  if(m==='compare') renderCompare();
+}
+
+function initRegionTabs(){
+  const wrap = document.getElementById('regionTabs');
+  const tabs = [{id:'all',name:'All Regions'}, ...regions.map(r=>({id:r.id,name:r.name}))];
+  wrap.innerHTML = tabs.map(t =>
+    `<button data-r="${t.id}" class="${t.id===state.region?'active':''}" onclick="selectRegion('${t.id}')">${t.name}</button>`
+  ).join('');
+}
+function selectRegion(id){
+  state.region = id;
+  document.querySelectorAll('#regionTabs button').forEach(b=>b.classList.toggle('active', b.dataset.r===id));
+  renderMatrix();
+}
+
+function initDomainChips(){
+  const wrap = document.getElementById('domainChips');
+  wrap.innerHTML = `<button class="clear" onclick="clearDomainFilter()">All domains</button>` +
+    domains.map(d => `<button data-d="${d.id}" onclick="toggleDomainChip('${d.id}')">${d.icon} ${d.name}</button>`).join('');
+}
+function toggleDomainChip(id){
+  if(state.domainFilter.has(id)) state.domainFilter.delete(id); else state.domainFilter.add(id);
+  syncDomainChips(); renderMatrix();
+}
+function clearDomainFilter(){ state.domainFilter.clear(); syncDomainChips(); renderMatrix(); }
+function syncDomainChips(){
+  document.querySelectorAll('#domainChips button[data-d]').forEach(b=>{
+    b.classList.toggle('active', state.domainFilter.has(b.dataset.d));
+  });
+}
+
+function visibleLawsForRegion(){
+  if(state.region==='all') return regions;
+  return regions.filter(r=>r.id===state.region);
+}
+
+function renderMatrix(){
+  state.search = document.getElementById('searchBox').value.trim().toLowerCase();
+  const shownRegions = visibleLawsForRegion();
+  const shownDomains = domains.filter(d=>{
+    if(state.domainFilter.size && !state.domainFilter.has(d.id)) return false;
+    if(state.search && !(d.name.toLowerCase().includes(state.search) || d.desc.toLowerCase().includes(state.search))) return false;
+    return true;
+  });
+
+  const container = document.getElementById('matrixContainer');
+  if(!shownDomains.length){
+    container.innerHTML = `<div class="no-results">No domains match your filters.</div>`;
+    return;
+  }
+
+  let html = '<table class="matrix"><thead>';
+  html += '<tr class="region-band"><td class="domain-head">Region</td>';
+  shownRegions.forEach(r=>{ html += `<td colspan="${r.laws.length}">${r.name}</td>`; });
+  html += '</tr>';
+  html += '<tr><th class="domain-head">AIGP Exam Domain</th>';
+  shownRegions.forEach(r=>{
+    r.laws.forEach(l=>{
+      html += `<th class="region-color-${r.color}"><div class="law-head-name">${l.name}${l.primary?' ★':''}</div><div class="law-head-sub">${l.sub}</div></th>`;
+    });
+  });
+  html += '</tr></thead><tbody>';
+
+  shownDomains.forEach(d=>{
+    html += `<tr><th><div class="domain-name">${d.icon} ${d.name}</div><div class="domain-desc">${d.desc}</div></th>`;
+    shownRegions.forEach(r=>{
+      r.laws.forEach(l=>{
+        const cell = (matrix[d.id] && matrix[d.id][l.id]) || {level:'N',summary:'No data.',refs:'—'};
+        html += `<td class="cell region-color-${r.color}" onclick="openPanel('${d.id}','${l.id}')"><span class="badge ${cell.level}">${cell.level}</span></td>`;
+      });
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+/* =========================================================================
+   CROSS-COMPARE (any laws, any regions, side by side)
+   ========================================================================= */
+let compareSelection = new Set(['eu_ai_act','skorea_ai_basic_act','colorado_ai_act','china_genai']);
+
+function initComparePicker(){
+  const body = document.getElementById('comparePickerBody');
+  body.innerHTML = regions.map(r => `
+    <div class="compare-region-group">
+      <div class="grp-label">${r.name}</div>
+      <div class="compare-chips">
+        ${r.laws.map(l => `<button type="button" class="law-chip region-color-${r.color} ${compareSelection.has(l.id)?'active':''}" data-law="${l.id}" onclick="toggleCompareLaw('${l.id}')">${l.name}${l.primary?' ★':''}</button>`).join('')}
+      </div>
+    </div>`).join('');
+}
+function toggleCompareLaw(lawId){
+  if(compareSelection.has(lawId)) compareSelection.delete(lawId); else compareSelection.add(lawId);
+  initComparePicker();
+  renderCompare();
+}
+function compareQuickPick(kind){
+  if(kind==='clear'){ compareSelection.clear(); }
+  else if(kind==='primary'){ compareSelection = new Set(allLaws.filter(l=>l.primary).map(l=>l.id)); }
+  else if(kind==='employment'){ compareSelection = new Set(['eu_ai_act','nyc_ll144','colorado_ai_act','skorea_ai_basic_act','gdpr']); }
+  initComparePicker();
+  renderCompare();
+}
+
+function renderCompare(){
+  initComparePicker();
+  const container = document.getElementById('compareContainer');
+  const selectedLaws = allLaws.filter(l => compareSelection.has(l.id));
+  if(!selectedLaws.length){
+    container.innerHTML = `<div class="compare-empty">Select at least one law above — pick laws from different regions to compare them side by side, regardless of region tab.</div>`;
+    return;
+  }
+
+  let html = '<table class="matrix"><thead><tr>';
+  html += '<th class="domain-head">AIGP Exam Domain</th>';
+  selectedLaws.forEach(l=>{
+    html += `<th class="region-color-${l.regionColor}"><div class="law-head-name">${l.name}${l.primary?' ★':''}</div><div class="law-head-sub">${l.sub} · ${l.country}</div></th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  domains.forEach(d=>{
+    html += `<tr><th><div class="domain-name">${d.icon} ${d.name}</div><div class="domain-desc">${d.desc}</div></th>`;
+    selectedLaws.forEach(l=>{
+      const cell = (matrix[d.id] && matrix[d.id][l.id]) || {level:'N',summary:'No data.',refs:'—'};
+      html += `<td class="cell region-color-${l.regionColor}" onclick="openPanel('${d.id}','${l.id}')"><span class="badge ${cell.level}">${cell.level}</span></td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+/* =========================================================================
+   DETAIL PANEL
+   ========================================================================= */
+const levelLabels = {M:'Mandatory',P:'Partial',G:'Guidance',N:'Not addressed'};
+function openPanel(domainId, lawId){
+  const d = domainById[domainId], l = lawById[lawId];
+  const cell = (matrix[domainId] && matrix[domainId][lawId]) || {level:'N',summary:'No data.',refs:'—'};
+  document.getElementById('p-law').textContent = l.name + (l.primary?' ★':'');
+  document.getElementById('p-lawsub').textContent = `${l.sub} · ${l.country}`;
+  document.getElementById('p-domain').textContent = `${d.icon} ${d.name}`;
+  const statusEl = document.getElementById('p-status');
+  statusEl.textContent = `${cell.level} — ${levelLabels[cell.level]}`;
+  statusEl.className = 'panel-status';
+  statusEl.style.background = getComputedStyle(document.documentElement).getPropertyValue(`--${cell.level.toLowerCase()}-bg`);
+  statusEl.style.color = getComputedStyle(document.documentElement).getPropertyValue(`--${cell.level.toLowerCase()}-fg`);
+  document.getElementById('p-summary').textContent = cell.summary;
+  document.getElementById('p-refs').textContent = cell.refs;
+  document.getElementById('p-tip').textContent = examTip(l, d, cell.level);
+  document.getElementById('p-verified').textContent = l.verifiedAt ? `Content verified: ${l.verifiedAt}${isStale(l.verifiedAt) ? ' — ⚠️ over 6 months old, re-verify before relying on this' : ''}` : '';
+
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById('panel').classList.add('show');
+}
+function closePanel(){
+  document.getElementById('overlay').classList.remove('show');
+  document.getElementById('panel').classList.remove('show');
+}
+function jumpToLaw(lawId){
+  closePanel();
+  setMode('matrix');
+  const law = lawById[lawId];
+  selectRegion(law.regionId);
+  document.getElementById('searchBox').value='';
+  state.domainFilter.clear(); syncDomainChips();
+  renderMatrix();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* =========================================================================
+   LAW FINDER
+   ========================================================================= */
+const finderOptions = {
+  geo:[
+    {id:'eu',label:'European Union'},{id:'uk',label:'United Kingdom'},{id:'us',label:'United States (federal)'},
+    {id:'us_nyc',label:'US — New York City'},{id:'us_co',label:'US — Colorado'},{id:'ca',label:'Canada'},
+    {id:'br',label:'Brazil'},{id:'kr',label:'South Korea'},{id:'cn',label:'China'},{id:'sg',label:'Singapore'},
+    {id:'jp',label:'Japan'},{id:'au',label:'Australia'},{id:'in',label:'India'},{id:'global',label:'Global / unspecified'},
+  ],
+  aitype:[
+    {id:'automated_decision',label:'Automated decision-making'},{id:'generative',label:'Generative AI'},
+    {id:'biometric_id',label:'Biometric identification'},{id:'facial_recognition',label:'Facial recognition'},
+    {id:'emotion',label:'Emotion recognition'},{id:'recommendation',label:'Recommendation system'},
+    {id:'content_moderation',label:'Content moderation'},{id:'predictive_policing',label:'Predictive policing'},
+    {id:'social_scoring',label:'Social scoring'},{id:'chatbot',label:'Chatbot / conversational AI'},
+  ],
+  sector:[
+    {id:'employment',label:'Employment / HR'},{id:'healthcare',label:'Healthcare'},{id:'finance',label:'Finance'},
+    {id:'education',label:'Education'},{id:'housing',label:'Housing'},{id:'law_enforcement',label:'Law enforcement'},
+    {id:'government',label:'Government / public sector'},{id:'critical_infra',label:'Critical infrastructure'},
+    {id:'marketing',label:'Marketing / advertising'},{id:'other',label:'Other'},
+  ],
+  data:[
+    {id:'personal',label:'Personal data'},{id:'biometric',label:'Biometric data'},{id:'health',label:'Health data'},
+    {id:'financial',label:'Financial data'},{id:'children',label:'Children\'s data'},{id:'location',label:'Location data'},
+    {id:'sensitive',label:'Other sensitive data'},
+  ],
+};
+let finderSel = {geo:new Set(), aitype:new Set(), sector:new Set(), data:new Set()};
+
+function initFinderForm(){
+  const map = [['opt-geo','geo'],['opt-aitype','aitype'],['opt-sector','sector'],['opt-data','data']];
+  map.forEach(([elId,key])=>{
+    const el = document.getElementById(elId);
+    el.innerHTML = finderOptions[key].map(o=>
+      `<button type="button" class="f-chip" data-k="${key}" data-v="${o.id}" onclick="toggleFinderChip('${key}','${o.id}',this)">${o.label}</button>`
+    ).join('');
+  });
+}
+function toggleFinderChip(key,val,btn){
+  if(finderSel[key].has(val)) finderSel[key].delete(val); else finderSel[key].add(val);
+  btn.classList.toggle('active');
+}
+function resetFinder(){
+  Object.keys(finderSel).forEach(k=>finderSel[k].clear());
+  document.querySelectorAll('.f-chip').forEach(b=>b.classList.remove('active'));
+  document.getElementById('finderResults').innerHTML =
+    `<div class="results-empty">Select at least one option on the left, then click <b>Find applicable laws</b>.</div>`;
+}
+
+const HIGH_RISK_SECTORS = new Set(['employment','healthcare','finance','education','housing','law_enforcement','government','critical_infra']);
+
+function runFinder(){
+  const geo = finderSel.geo, ai = finderSel.aitype, sec = finderSel.sector, dat = finderSel.data;
+  if(!geo.size && !ai.size && !sec.size && !dat.size){
+    document.getElementById('finderResults').innerHTML =
+      `<div class="results-empty">Select at least one option on the left, then click <b>Find applicable laws</b>.</div>`;
+    return;
+  }
+
+  // results: lawId -> {tier, reasons:[], obligations:[]}
+  const results = {};
+  function flag(lawId, tier, reason, obligation){
+    if(!results[lawId]) results[lawId] = {tier, reasons:[], obligations:[]};
+    // escalate tier if a stronger trigger fires later (definitely > likely > monitor)
+    const rank = {definitely:3, likely:2, monitor:1};
+    if(rank[tier] > rank[results[lawId].tier]) results[lawId].tier = tier;
+    if(!results[lawId].reasons.includes(reason)) results[lawId].reasons.push(reason);
+    if(obligation && !results[lawId].obligations.includes(obligation)) results[lawId].obligations.push(obligation);
+  }
+
+  // --- EU ---
+  if(geo.has('eu')){
+    flag('eu_ai_act','definitely','AI system is placed on the market or used in the EU.','Risk classification, conformity assessment, technical documentation, human oversight (per risk tier).');
+    flag('gdpr','definitely','Operating in the EU triggers GDPR regardless of AI-specific rules.','Lawful basis, transparency notices, DPIA if high risk, data-subject rights.');
+  }
+  if(dat.has('personal') && !geo.has('eu')){
+    flag('gdpr','likely','GDPR has extraterritorial reach over personal data of EU individuals even if the deployer is outside the EU.','Assess EU-person data flows; GDPR may still apply.');
+  }
+
+  // --- UK ---
+  if(geo.has('uk')){
+    flag('uk_ai_framework','definitely','AI system operates in the UK, in scope of sector-regulator guidance.','Apply the 5 cross-sectoral principles via the relevant UK regulator.');
+    if(dat.has('personal')) flag('gdpr','likely','UK GDPR mirrors EU GDPR for personal data processed in the UK.','Same core data-protection duties as EU GDPR.');
+  }
+
+  // --- US federal / general ---
+  if(geo.has('us')){
+    flag('us_eo_ai','monitor','US federal AI policy signal — note EO 14110 (2023) was rescinded and replaced by EO 14179 (Jan 2025).','Track current federal AI policy; no direct EO-based mandate for private industry currently in force.');
+  }
+
+  // --- NYC LL144 ---
+  if(geo.has('us_nyc') && sec.has('employment') && ai.has('automated_decision')){
+    flag('nyc_ll144','definitely','NYC + employment sector + automated decision-making is exactly the scenario NYC LL144 regulates (Automated Employment Decision Tools).','Independent bias audit, public posting of results, 10-day candidate notice.');
+  } else if(geo.has('us_nyc') && sec.has('employment')){
+    flag('nyc_ll144','likely','NYC + employment suggests possible AEDT exposure; confirm whether the tool "substantially assists" a hiring/promotion decision.','Confirm AEDT status; if yes, bias audit and notice duties apply.');
+  }
+
+  // --- Colorado AI Act ---
+  const secIsHighRisk = [...sec].some(s=>HIGH_RISK_SECTORS.has(s));
+  if(geo.has('us_co') && secIsHighRisk && ai.has('automated_decision')){
+    flag('colorado_ai_act','definitely','Colorado + a high-risk sector + automated decision-making matches the Colorado AI Act\'s "high-risk AI system" trigger.','Risk-management policy, impact assessment, consumer notice and appeal rights.');
+  } else if(geo.has('us_co') && (secIsHighRisk || ai.has('automated_decision'))){
+    flag('colorado_ai_act','likely','Colorado exposure plus a partial high-risk trigger (sector or automated decision, not both confirmed).','Confirm "consequential decision" status under the Act.');
+  }
+
+  // --- Canada ---
+  if(geo.has('ca')){
+    flag('canada_aida','monitor','Canada AIDA (Bill C-27) died on prorogation in Jan 2025 — not current law, but successor legislation is expected.','Monitor for reintroduced federal AI legislation in Canada.');
+  }
+
+  // --- Brazil ---
+  if(geo.has('br')){
+    flag('brazil_ai_bill','likely','Brazil AI Bill (PL 2338/2023) is still moving through Congress — not yet enforceable, but directionally likely to apply once passed.','Watch for passage; likely to require risk classification and non-discrimination measures.');
+  }
+
+  // --- South Korea ---
+  if(geo.has('kr')){
+    flag('skorea_ai_basic_act','definitely','South Korea AI Basic Act becomes effective January 2026 and covers AI operating in South Korea.','Safety-officer designation if "high-impact"; disclosure of AI-generated content.');
+  }
+
+  // --- China ---
+  if(geo.has('cn') && ai.has('generative')){
+    flag('china_genai','definitely','China + generative AI is squarely within the CAC Interim Measures for Generative AI Services.','Security assessment, algorithm filing with CAC, content labelling.');
+  } else if(geo.has('cn')){
+    flag('china_genai','likely','Operating in China; confirm whether the system is generative to trigger the interim measures directly.','Confirm generative-AI status; if yes, security assessment and filing apply.');
+  }
+
+  // --- Singapore / Japan / Australia (voluntary, geography-triggered) ---
+  if(geo.has('sg')) flag('singapore_model_ai_gov','monitor','Operating in Singapore — voluntary Model AI Governance Framework is the relevant reference.','Apply as good-practice baseline; pair with PDPA for personal data.');
+  if(geo.has('jp')) flag('japan_ai_guidelines','monitor','Operating in Japan — voluntary AI Guidelines for Business apply as soft-law reference.','Apply agile-governance PDCA approach as good practice.');
+  if(geo.has('au')) flag('australia_ai_ethics','monitor','Operating in Australia — voluntary AI Ethics Framework is the relevant reference.','Apply the 8 ethics principles as good practice.');
+
+  // --- India DPDP ---
+  if(geo.has('in') && dat.has('personal')){
+    flag('india_dpdp','definitely','India + personal data processing triggers the DPDP Act directly.','Notice, consent, and Data Principal rights (access/correction/erasure/grievance).');
+  } else if(geo.has('in')){
+    flag('india_dpdp','likely','Operating in India; confirm whether personal data is processed to trigger DPDP directly.','Confirm personal-data flows; DPDP applies if so.');
+  }
+
+  // --- Cross-cutting: biometric / facial recognition ---
+  if(ai.has('biometric_id') || ai.has('facial_recognition')){
+    if(geo.has('eu')){
+      flag('eu_ai_act','definitely','Biometric identification / facial recognition in the EU falls under Art. 5\'s prohibited or tightly restricted practices.','Assess against Art. 5 prohibition; real-time remote biometric ID in public spaces is banned with narrow exceptions.');
+    } else {
+      flag('eu_ai_act','likely','Biometric ID / facial recognition can trigger EU AI Act Art. 5 if the system affects EU persons or is placed on the EU market, even without EU geography selected.','Assess extraterritorial reach before ruling out the EU AI Act.');
+    }
+    flag('coe_ai_convention','monitor','Biometric identification raises the equality/privacy concerns central to the Council of Europe AI Convention.','Review against the Convention\'s privacy and non-discrimination provisions.');
+  }
+
+  // --- Social scoring ---
+  if(ai.has('social_scoring')){
+    if(geo.has('eu')) flag('eu_ai_act','definitely','Social scoring by public (and in some cases private) actors is explicitly prohibited under Art. 5.','This practice is banned outright in the EU — do not deploy without re-scoping.');
+    else flag('eu_ai_act','likely','Social scoring is an EU AI Act Art. 5 prohibited-practice category — relevant if the system could reach EU persons.','Review Art. 5 prohibition even absent explicit EU geography.');
+  }
+
+  // --- Predictive policing / law enforcement ---
+  if(ai.has('predictive_policing') || sec.has('law_enforcement')){
+    if(geo.has('eu')) flag('eu_ai_act','definitely','Law-enforcement AI use cases are listed as high-risk (and some predictive-policing profiling is restricted) under Annex III / Art. 5.','Check against both the Annex III high-risk list and Art. 5 restrictions.');
+    flag('coe_ai_convention','likely','Law-enforcement AI implicates the rule-of-law and human-rights safeguards central to the Convention.','Review procedural safeguards required for law-enforcement AI use.');
+  }
+
+  // --- Employment + automated decisions (general, beyond NYC/CO) ---
+  if(sec.has('employment') && ai.has('automated_decision')){
+    if(geo.has('eu')) flag('eu_ai_act','definitely','Employment-related automated decision systems are listed as high-risk under Annex III.','Full high-risk obligations apply: risk management, human oversight, documentation.');
+  }
+
+  // --- Children's data ---
+  if(dat.has('children')){
+    if(geo.has('eu')) flag('gdpr','definitely','GDPR imposes heightened protections and consent requirements for children\'s personal data.','Age-appropriate consent mechanisms; heightened DPIA scrutiny.');
+    if(geo.has('in')) flag('india_dpdp','definitely','DPDP Act requires verifiable parental consent for processing children\'s personal data.','Verifiable parental consent; no behavioural tracking/targeted ads to children.');
+  }
+
+  // --- Health / financial / biometric / sensitive data -> GDPR Art 9 special category ---
+  if((dat.has('health') || dat.has('biometric') || dat.has('sensitive')) && geo.has('eu')){
+    flag('gdpr','definitely','Health, biometric or other sensitive data is "special category" data under GDPR Art. 9, requiring an explicit exception to process.','Identify an Art. 9(2) exception; apply heightened security and DPIA.');
+  }
+
+  // --- Generative / advanced model -> monitor-tier international frameworks ---
+  if(ai.has('generative')){
+    flag('g7_hiroshima','monitor','Generative AI aligns with the Hiroshima Process\'s focus on advanced/foundation model risk.','Voluntary — consider adopting reporting and safety-testing practices for advanced models.');
+  }
+
+  // --- Always-relevant voluntary baselines (any jurisdiction) ---
+  flag('nist_ai_rmf','monitor','Widely referenced voluntary risk-management baseline, useful as a self-assessment framework regardless of jurisdiction.','Adopt Govern-Map-Measure-Manage as a self-assessment baseline.');
+  flag('oecd_ai_principles','monitor','OECD AI Principles are a globally referenced voluntary baseline applicable to any AI system.','Use as a cross-jurisdictional principles checklist.');
+  flag('iso_42001','monitor','ISO/IEC 42001 certification is a globally recognised way to demonstrate AI governance maturity, regardless of jurisdiction.','Consider certification to demonstrate governance maturity to regulators/customers.');
+  flag('unesco_ai_ethics','monitor','UNESCO\'s Recommendation is a broad global ethical baseline endorsed by 193 member states.','Use as an ethics cross-check, especially for human-rights-sensitive use cases.');
+
+  renderFinderResults(results);
+}
+
+function renderFinderResults(results){
+  const tiers = {definitely:[], likely:[], monitor:[]};
+  Object.entries(results).forEach(([lawId,r])=>{
+    tiers[r.tier].push({law:lawById[lawId], ...r});
+  });
+  Object.values(tiers).forEach(arr=>arr.sort((a,b)=> (b.law.primary?1:0)-(a.law.primary?1:0) || a.law.name.localeCompare(b.law.name)));
+
+  const tierMeta = {
+    definitely:{icon:'🔴',label:'Definitely Apply',cls:'definitely'},
+    likely:{icon:'🟡',label:'Likely Apply',cls:'likely'},
+    monitor:{icon:'🟢',label:'Good Practice / Monitor',cls:'monitor'},
+  };
+
+  let html = '';
+  ['definitely','likely','monitor'].forEach(tierKey=>{
+    const list = tiers[tierKey];
+    const meta = tierMeta[tierKey];
+    html += `<div class="tier"><h3>${meta.icon} ${meta.label} <span class="tier-count">(${list.length})</span></h3>`;
+    if(!list.length){
+      html += `<div style="color:var(--text-faint);font-size:.85rem;padding:4px 2px 0;">No laws in this tier for the current inputs.</div>`;
+    }
+    list.forEach(item=>{
+      html += `<div class="result-card ${meta.cls}">
+        <div class="rc-top">
+          <div><div class="rc-name">${item.law.name}${item.law.primary?' ★':''}</div><div class="rc-sub">${item.law.sub} · ${item.law.country}</div></div>
+        </div>
+        <div class="rc-why"><b>Why it applies:</b> ${item.reasons.join(' ')}</div>
+        <div class="rc-obl"><b>Key obligations:</b> ${item.obligations.join(' ')}</div>
+        <button class="rc-jump" onclick="jumpToLaw('${item.law.id}')">View in Comparison Matrix →</button>
+      </div>`;
+    });
+    html += '</div>';
+  });
+
+  html += `<div class="disclaimer">This is a study aid, not legal advice. Law statuses and effective dates (e.g. Colorado AI Act, South Korea AI Basic Act) change — verify against primary sources before relying on this for a real compliance decision.</div>`;
+
+  document.getElementById('finderResults').innerHTML = html;
+}
+
+/* =========================================================================
+   INIT
+   ========================================================================= */
+initRegionTabs();
+initDomainChips();
+initFinderForm();
+initComparePicker();
+renderMatrix();
+renderStalenessFooter();
+</script>
+</body>
+</html>
